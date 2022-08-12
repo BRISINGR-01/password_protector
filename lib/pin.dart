@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pin_code_widget/flutter_pin_code_widget.dart';
 import 'package:password_protector/app.dart';
 import 'package:password_protector/password.dart';
+import 'package:password_protector/safe_exit.dart';
 
 class UserPIN extends StatefulWidget {
   const UserPIN({Key? key}) : super(key: key);
@@ -15,10 +16,10 @@ class _UserPINState extends State<UserPIN> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return SafeExit(
+      child: SafeArea(
+          child: Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
           title: const Text('Pin code'),
         ),
         body: Column(
@@ -104,7 +105,7 @@ class _UserPINState extends State<UserPIN> {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 }

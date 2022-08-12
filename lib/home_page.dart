@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:password_protector/device_built_in_auth.dart';
+import 'package:password_protector/pin.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({Key? key}) : super(key: key);
@@ -12,14 +13,41 @@ class HomePage extends StatelessWidget {
 
   Future<bool> _checkBiometrics() async {
     late bool canCheckBiometrics;
+    late bool canAuthenticate;
+    late bool authenticated;
 
     try {
-      canCheckBiometrics = await auth.canCheckBiometrics;
+      canCheckBiometrics = await auth.isDeviceSupported();
     } on PlatformException catch (e) {
       print(e);
       canCheckBiometrics = false;
     } catch (e) {
       canCheckBiometrics = false;
+    }
+
+    try {
+      canAuthenticate = await auth.canCheckBiometrics;
+    } on PlatformException catch (e) {
+      print(e);
+      canAuthenticate = false;
+    } catch (e) {
+      canAuthenticate = false;
+    }
+
+    print([canCheckBiometrics, canAuthenticate]);
+
+    if (canCheckBiometrics) {
+      try {
+        authenticated = await auth.authenticate(
+          localizedReason: 'Use device authentication',
+          options: const AuthenticationOptions(
+            stickyAuth: true,
+          ),
+        );
+      } catch (e) {
+        authenticated = false;
+        print(e);
+      }
     }
 
     return canCheckBiometrics || await auth.isDeviceSupported();
@@ -41,7 +69,7 @@ class HomePage extends StatelessWidget {
           return const BuiltInAuth();
         }
 
-        return Text("data");
+        return const UserPIN();
       }),
     );
   }
