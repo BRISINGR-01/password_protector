@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:password_protector/app.dart';
 import 'package:password_protector/pin.dart';
 import 'package:password_protector/safe_exit.dart';
+import 'package:password_protector/security_layers.dart';
 import 'package:passwordfield/passwordfield.dart';
 
 class UserPassword extends StatelessWidget {
-  const UserPassword({Key? key}) : super(key: key);
+  final int layerIndex;
+  const UserPassword({Key? key, required this.layerIndex}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class UserPassword extends StatelessWidget {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const UserPIN(),
+                        builder: (context) => UserPIN(layerIndex: layerIndex),
                       ));
                 }),
             body: Padding(
@@ -43,8 +44,11 @@ class UserPassword extends StatelessWidget {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => App(),
+                          builder: (context) =>
+                              SecurityLayers(layerIndex: layerIndex + 1),
                         ));
+                  } else {
+                    // error
                   }
                 }),
                 inputDecoration: PasswordDecoration(),

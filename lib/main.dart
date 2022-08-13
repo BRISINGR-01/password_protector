@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:password_protector/home_page.dart';
+import 'package:password_protector/security_layers.dart';
 
 void main() {
-  Color primary = Color.fromARGB(255, 144, 164, 174);
-  Color tertiary = Color.fromARGB(255, 91, 255, 21);
+  Color primary = const Color.fromARGB(255, 144, 164, 174);
+  Color tertiary = const Color.fromARGB(255, 91, 255, 21);
 
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: primary.withAlpha(180),
@@ -16,7 +16,7 @@ void main() {
   ));
 
   runApp(MaterialApp(
-    home: HomePage(),
+    home: SecurityLayers(layerIndex: 0),
     theme: ThemeData(
       fontFamily: "New Times Roman",
       colorScheme: ColorScheme(

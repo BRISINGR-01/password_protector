@@ -95,7 +95,7 @@
 //     if (authenticated) {
 //       Navigator.push(
 //         context,
-//         MaterialPageRoute(builder: (context) => UserPIN()),
+//         MaterialPageRoute(builder: (context) => User()),
 //       );
 //     }
 //     setState(
@@ -233,10 +233,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:password_protector/pin.dart';
+import 'package:password_protector/security_layers.dart';
 
 class BuiltInAuth extends StatefulWidget {
-  const BuiltInAuth({Key? key}) : super(key: key);
+  final int layerIndex;
+  const BuiltInAuth({Key? key, required this.layerIndex}) : super(key: key);
 
   @override
   State<BuiltInAuth> createState() => _BuiltInAuthState();
@@ -265,7 +266,9 @@ class _BuiltInAuthState extends State<BuiltInAuth> {
       Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const UserPIN(),
+            builder: (context) => SecurityLayers(
+              layerIndex: widget.layerIndex + 1,
+            ),
           ));
     }
   }
@@ -287,9 +290,13 @@ class _BuiltInAuthState extends State<BuiltInAuth> {
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
-              Text('Please authenticate',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displaySmall),
+              Padding(
+                padding: const EdgeInsets.all(80.0),
+                child: Text(
+                    'Please authenticate using the device biometric security',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge),
+              ),
               ElevatedButton(
                 onPressed: _authenticate,
                 style: ElevatedButton.styleFrom(

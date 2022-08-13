@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.password_protector">
    <application
-        android:label="password_protector"
+        android:label="Password Protector"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

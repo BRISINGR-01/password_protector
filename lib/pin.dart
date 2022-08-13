@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pin_code_widget/flutter_pin_code_widget.dart';
-import 'package:password_protector/app.dart';
 import 'package:password_protector/password.dart';
 import 'package:password_protector/safe_exit.dart';
+import 'package:password_protector/security_layers.dart';
 
 class UserPIN extends StatefulWidget {
-  const UserPIN({Key? key}) : super(key: key);
+  final int layerIndex;
+  const UserPIN({Key? key, required this.layerIndex}) : super(key: key);
 
   @override
   State<UserPIN> createState() => _UserPINState();
@@ -51,7 +52,8 @@ class _UserPINState extends State<UserPIN> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => App(),
+                            builder: (context) => SecurityLayers(
+                                layerIndex: widget.layerIndex + 1),
                           ));
                     } else {
                       await Future.delayed(const Duration(milliseconds: 100));
@@ -93,7 +95,9 @@ class _UserPINState extends State<UserPIN> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const UserPassword(),
+                              builder: (context) => UserPassword(
+                                layerIndex: widget.layerIndex,
+                              ),
                             ));
                       },
                       child: const Icon(

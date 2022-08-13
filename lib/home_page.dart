@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:password_protector/device_built_in_auth.dart';
-import 'package:password_protector/pin.dart';
+import 'package:password_protector/security_layers.dart';
 
 class HomePage extends StatelessWidget {
   HomePage({Key? key}) : super(key: key);
@@ -13,41 +13,14 @@ class HomePage extends StatelessWidget {
 
   Future<bool> _checkBiometrics() async {
     late bool canCheckBiometrics;
-    late bool canAuthenticate;
-    late bool authenticated;
 
     try {
-      canCheckBiometrics = await auth.isDeviceSupported();
+      canCheckBiometrics = await auth.canCheckBiometrics;
     } on PlatformException catch (e) {
       print(e);
       canCheckBiometrics = false;
     } catch (e) {
       canCheckBiometrics = false;
-    }
-
-    try {
-      canAuthenticate = await auth.canCheckBiometrics;
-    } on PlatformException catch (e) {
-      print(e);
-      canAuthenticate = false;
-    } catch (e) {
-      canAuthenticate = false;
-    }
-
-    print([canCheckBiometrics, canAuthenticate]);
-
-    if (canCheckBiometrics) {
-      try {
-        authenticated = await auth.authenticate(
-          localizedReason: 'Use device authentication',
-          options: const AuthenticationOptions(
-            stickyAuth: true,
-          ),
-        );
-      } catch (e) {
-        authenticated = false;
-        print(e);
-      }
     }
 
     return canCheckBiometrics || await auth.isDeviceSupported();
@@ -66,10 +39,12 @@ class HomePage extends StatelessWidget {
             ),
           );
         } else if (snapshot.data.toString() == "true") {
-          return const BuiltInAuth();
+          return const BuiltInAuth(layerIndex: 0);
         }
 
-        return const UserPIN();
+        return SecurityLayers(
+          layerIndex: 1,
+        );
       }),
     );
   }
@@ -139,9 +114,3 @@ class HomePage extends StatelessWidget {
 //     );
 //   }
 // }
-
-enum _SupportState {
-  unknown,
-  supported,
-  unsupported,
-}
