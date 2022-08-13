@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:password_protector/home_page.dart';
 
 void main() {
-  Color primary = Colors.blueGrey.shade300;
+  Color primary = Color.fromARGB(255, 144, 164, 174);
   Color tertiary = Color.fromARGB(255, 91, 255, 21);
 
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
