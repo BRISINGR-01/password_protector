@@ -8,6 +8,7 @@ import 'package:password_protector/data.dart';
 import 'package:password_protector/device_built_in_auth.dart';
 import 'package:password_protector/password.dart';
 import 'package:password_protector/pin.dart';
+import 'package:password_protector/settings.dart';
 
 class SecurityLayers extends StatelessWidget {
   final int layerIndex;
@@ -61,47 +62,80 @@ class SecurityLayers extends StatelessWidget {
           Map<String, dynamic> data = snapshot.data as Map<String, dynamic>;
           Map<String, dynamic> settings = data["settings"];
           Map<String, String> passwords = data["passwords"];
+          print(settings);
+          print(passwords);
 
-          if (settings["order"].length <= layerIndex) return const App();
-
-          switch (settings["order"][layerIndex]) {
-            case SecurityElements.Biometric:
-              if (data["canAuthenticate"]) {
+          switch (layerIndex) {
+            case 0:
+              if (data["canAuthenticate"] && settings["useBiometrics"]) {
                 return BuiltInAuth(layerIndex: layerIndex);
+              } else if (passwords.isEmpty) {
+                return const Settings();
+              } else if (!settings["usePIN"] && !settings["usePassword"]) {
+                return const App();
               } else {
-                return SecurityLayers(layerIndex: layerIndex + 1);
+                return SecurityLayers(layerIndex: 1);
               }
-            case SecurityElements.PIN:
-              return UserPIN(layerIndex: layerIndex);
-            case SecurityElements.Password:
-              return UserPassword(layerIndex: layerIndex);
-            case SecurityElements.AllUserDefined:
-              if (data["settings"]["usePIN"] &&
-                  data["settings"]["preferredMethod"] == SecurityElements.PIN &&
-                  passwords.containsKey("PIN")) {
-                return UserPIN(layerIndex: layerIndex);
-              } else if (data["settings"]["usePassword"] &&
-                  data["settings"]["preferredMethod"] ==
-                      SecurityElements.Password &&
-                  passwords.containsKey("password")) {
-                return UserPassword(layerIndex: layerIndex);
-              } else if (passwords.isNotEmpty) {
-                Widget child;
-                if (passwords.containsKey("PIN") &&
-                    settings["preferredMethod"] == SecurityElements.PIN) {
-                  child = UserPIN(layerIndex: layerIndex);
-                } else if (passwords.containsKey("password") &&
-                    settings["preferredMethod"] == SecurityElements.Password) {
-                  child = UserPassword(layerIndex: layerIndex);
-                } else if (passwords.containsKey("PIN")) {
-                  child = UserPIN(layerIndex: layerIndex);
-                } else if (passwords.containsKey("password")) {
-                  child = UserPassword(layerIndex: layerIndex);
-                } else {
-                  child = const App();
+            case 1:
+              if (settings["requireBothPasswordAndPIN"]) {
+                if (passwords.containsKey("PIN")) {
+                  return UserPIN(
+                    layerIndex: layerIndex,
+                    enableSwitching: false,
+                  );
                 }
 
-                return ErrorDisplay(child: child);
+                if (passwords.containsKey("password")) {
+                  return ErrorDisplay(
+                    message:
+                        "There is a problem with you PIN! Please renew it!",
+                    child: UserPassword(
+                      layerIndex: layerIndex,
+                      enableSwitching: false,
+                    ),
+                  );
+                }
+              }
+
+              if (settings["defaultIsPIN"]) {
+                if (settings["usePIN"] && passwords.containsKey("PIN")) {
+                  return UserPIN(
+                      layerIndex: layerIndex,
+                      enableSwitching: passwords.containsKey("password") &&
+                          settings["usePassword"]);
+                } else if (settings["usePassword"] &&
+                    passwords.containsKey("password")) {
+                  return UserPassword(
+                    layerIndex: layerIndex,
+                    enableSwitching: false,
+                  );
+                }
+              } else {
+                if (settings["usePassword"] &&
+                    passwords.containsKey("password")) {
+                  return UserPassword(
+                    layerIndex: layerIndex,
+                    enableSwitching:
+                        passwords.containsKey("PIN") && settings["usePIN"],
+                  );
+                } else if (settings["usePIN"] && passwords.containsKey("PIN")) {
+                  return UserPIN(
+                    layerIndex: layerIndex,
+                    enableSwitching: false,
+                  );
+                }
+              }
+
+              return const App();
+            case 2:
+              if (settings["requireBothPasswordAndPIN"]) {
+                if (!passwords.containsKey("PIN")) return const App();
+                if (passwords.containsKey("password")) {
+                  return UserPassword(
+                    layerIndex: layerIndex,
+                    enableSwitching: false,
+                  );
+                }
               }
 
               return const App();
@@ -114,7 +148,9 @@ class SecurityLayers extends StatelessWidget {
 
 class ErrorDisplay extends StatefulWidget {
   final Widget child;
-  const ErrorDisplay({Key? key, required this.child}) : super(key: key);
+  final String message;
+  const ErrorDisplay({Key? key, required this.child, required this.message})
+      : super(key: key);
 
   @override
   State<ErrorDisplay> createState() => _ErrorDisplayState();
@@ -126,14 +162,25 @@ class _ErrorDisplayState extends State<ErrorDisplay> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              "There was a problem with the PIN/Password. Please renew them!")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(widget.message)));
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: widget.child);
+  }
+}
+
+class AccessDenied extends StatelessWidget {
+  const AccessDenied({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const SafeArea(
+        child: Scaffold(
+      body: Center(child: Text("Access Denied!")),
+    ));
   }
 }

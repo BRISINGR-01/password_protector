@@ -4,9 +4,20 @@ import 'package:password_protector/safe_exit.dart';
 import 'package:password_protector/security_layers.dart';
 import 'package:passwordfield/passwordfield.dart';
 
-class UserPassword extends StatelessWidget {
+class UserPassword extends StatefulWidget {
   final int layerIndex;
-  const UserPassword({Key? key, required this.layerIndex}) : super(key: key);
+  final bool enableSwitching;
+  const UserPassword(
+      {Key? key, required this.layerIndex, required this.enableSwitching})
+      : super(key: key);
+
+  @override
+  State<UserPassword> createState() => _UserPasswordState();
+}
+
+class _UserPasswordState extends State<UserPassword> {
+  final TextEditingController controller = TextEditingController();
+  bool isWrong = false;
 
   @override
   Widget build(BuildContext context) {
@@ -18,26 +29,33 @@ class UserPassword extends StatelessWidget {
             ),
             floatingActionButtonLocation:
                 FloatingActionButtonLocation.startFloat,
-            floatingActionButton: FloatingActionButton(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: Icon(
-                  Icons.swap_horiz_outlined,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-                onPressed: () {
-                  if (Navigator.canPop(context)) Navigator.pop(context);
+            floatingActionButton: !widget.enableSwitching
+                ? null
+                : FloatingActionButton(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Icon(
+                      Icons.swap_horiz_outlined,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) Navigator.pop(context);
 
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserPIN(layerIndex: layerIndex),
-                      ));
-                }),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => UserPIN(
+                              layerIndex: widget.layerIndex,
+                              enableSwitching: widget.enableSwitching,
+                            ),
+                          ));
+                    }),
             body: Padding(
               padding: const EdgeInsets.all(16),
               child: PasswordField(
                 passwordConstraint: r'.*',
+                hintText: isWrong ? "Wrong password" : "Password",
                 autoFocus: true,
+                controller: controller,
                 color: Theme.of(context).colorScheme.primary,
                 onSubmit: ((password) {
                   if (password == "asd") {
@@ -45,24 +63,39 @@ class UserPassword extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              SecurityLayers(layerIndex: layerIndex + 1),
+                              SecurityLayers(layerIndex: widget.layerIndex + 1),
                         ));
                   } else {
-                    // error
+                    setState(() {
+                      isWrong = true;
+                    });
+
+                    Future.delayed(const Duration(milliseconds: 300))
+                        .then((value) => setState(() {
+                              isWrong = false;
+                            }));
                   }
+
+                  controller.clear();
                 }),
                 inputDecoration: PasswordDecoration(),
+                backgroundColor:
+                    isWrong ? Theme.of(context).colorScheme.error : null,
                 border: PasswordBorder(
                   border: OutlineInputBorder(
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: isWrong
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary,
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       width: 2,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: isWrong
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.primary,
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -72,7 +105,7 @@ class UserPassword extends StatelessWidget {
                         width: 2, color: Theme.of(context).colorScheme.error),
                   ),
                 ),
-                // errorMessage: 'must contain special character either . * @ # \$',
+                errorMessage: isWrong ? 'Wrong password!' : "",
               ),
             )),
       ),

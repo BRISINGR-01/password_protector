@@ -23,7 +23,7 @@ void main() {
         brightness: Brightness.light,
         primary: primary,
         onPrimary: Colors.white,
-        secondary: tertiary,
+        secondary: primary,
         onSecondary: Colors.black,
         tertiary: tertiary,
         onTertiary: Colors.black,

@@ -6,7 +6,10 @@ import 'package:password_protector/security_layers.dart';
 
 class UserPIN extends StatefulWidget {
   final int layerIndex;
-  const UserPIN({Key? key, required this.layerIndex}) : super(key: key);
+  final bool enableSwitching;
+  const UserPIN(
+      {Key? key, required this.layerIndex, required this.enableSwitching})
+      : super(key: key);
 
   @override
   State<UserPIN> createState() => _UserPINState();
@@ -32,16 +35,11 @@ class _UserPINState extends State<UserPIN> {
               style: Theme.of(context).textTheme.headline4,
             ),
             const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Column(
-                children: const [
-                  Text(
-                    'Enter the PIN you have chosen for this app',
-                    textAlign: TextAlign.center,
-                  ),
-                  Text('Forgot my PIN?')
-                ],
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Text(
+                'Enter the PIN you have chosen for this app',
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 60),
@@ -83,29 +81,33 @@ class _UserPINState extends State<UserPIN> {
                       color: Theme.of(context).colorScheme.onPrimary,
                       fontSize: 30),
                   deleteButtonColor: Theme.of(context).colorScheme.primary,
-                  leftBottomWidget: Container(
-                    margin: const EdgeInsets.only(left: 15, right: 15),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(),
-                      ),
-                      onPressed: () {
-                        if (Navigator.canPop(context)) Navigator.pop(context);
+                  leftBottomWidget: !widget.enableSwitching
+                      ? Container()
+                      : Container(
+                          margin: const EdgeInsets.only(left: 15, right: 15),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              shape: const CircleBorder(),
+                            ),
+                            onPressed: () {
+                              if (Navigator.canPop(context))
+                                Navigator.pop(context);
 
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => UserPassword(
-                                layerIndex: widget.layerIndex,
-                              ),
-                            ));
-                      },
-                      child: const Icon(
-                        Icons.swap_horiz,
-                        size: 30,
-                      ),
-                    ),
-                  )),
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => UserPassword(
+                                      layerIndex: widget.layerIndex,
+                                      enableSwitching: widget.enableSwitching,
+                                    ),
+                                  ));
+                            },
+                            child: const Icon(
+                              Icons.swap_horiz,
+                              size: 30,
+                            ),
+                          ),
+                        )),
             ),
           ],
         ),
