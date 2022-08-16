@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:password_protector/app.dart';
 import 'package:password_protector/data.dart';
+import 'package:password_protector/password.dart';
+import 'package:password_protector/pin.dart';
 import 'package:settings_ui/settings_ui.dart';
 
 class Settings extends StatefulWidget {
@@ -19,6 +20,11 @@ class _SettingsState extends State<Settings> {
   bool requireBothPasswordAndPIN = false;
   bool usePassword = false;
   bool useBiometrics = false;
+  String? password;
+  // ignore: non_constant_identifier_names
+  String? PIN;
+  bool hasPIN = false;
+  bool hasPassword = false;
 
   @override
   void initState() {
@@ -30,6 +36,13 @@ class _SettingsState extends State<Settings> {
           requireBothPasswordAndPIN = value["requireBothPasswordAndPIN"];
           usePassword = value["usePassword"];
           useBiometrics = value["useBiometrics"];
+        }));
+    dataHelper.getUserDefinedPasswords().then((value) => setState(() {
+          hasLoaded = true;
+          password = value["password"];
+          PIN = value["PIN"];
+          hasPIN = PIN?.isNotEmpty ?? false;
+          hasPassword = password?.isNotEmpty ?? false;
         }));
   }
 
@@ -70,6 +83,23 @@ class _SettingsState extends State<Settings> {
                     SettingsTile.switchTile(
                       onToggle: (value) {
                         if (value) {
+                          if (!hasPassword || !hasPIN) {
+                            return ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    duration:
+                                        const Duration(milliseconds: 1200),
+                                    content: Text(!hasPassword && !hasPIN
+                                        ? 'Add a PIN and a password first!'
+                                        : !hasPassword
+                                            ? 'Add a password first!'
+                                            : 'Add a PIN first!')));
+                          }
+                          setState(() {
+                            usePIN = true;
+                            usePassword = true;
+                          });
+                          dataHelper.setSetting("usePIN", "true");
+                          dataHelper.setSetting("usePassword", "true");
                         } else {}
 
                         setState(() {
@@ -85,6 +115,14 @@ class _SettingsState extends State<Settings> {
                     SettingsTile.switchTile(
                       onToggle: (value) {
                         if (value) {
+                          if (!hasPIN) {
+                            return ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    duration: Duration(milliseconds: 1200),
+                                    content: Text('Add a PIN first!')));
+                          }
+                          usePIN = true;
+                          dataHelper.setSetting("usePIN", "true");
                         } else {}
 
                         setState(() {
@@ -99,7 +137,21 @@ class _SettingsState extends State<Settings> {
                     SettingsTile.switchTile(
                       onToggle: (value) {
                         if (value) {
-                        } else {}
+                          if (!hasPIN) {
+                            return ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    duration: Duration(milliseconds: 1200),
+                                    content: Text('Add a PIN first!')));
+                          }
+                        } else {
+                          setState(() {
+                            requireBothPasswordAndPIN = false;
+                            defaultIsPIN = false;
+                          });
+                          dataHelper.setSetting(
+                              "requireBothPasswordAndPIN", "false");
+                          dataHelper.setSetting("defaultIsPIN", "false");
+                        }
 
                         setState(() {
                           usePIN = value;
@@ -113,7 +165,19 @@ class _SettingsState extends State<Settings> {
                     SettingsTile.switchTile(
                       onToggle: (value) {
                         if (value) {
-                        } else {}
+                          if (!hasPassword) {
+                            return ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    duration: Duration(milliseconds: 1200),
+                                    content: Text('Add a password first!')));
+                          }
+                        } else {
+                          setState(() {
+                            requireBothPasswordAndPIN = false;
+                          });
+                          dataHelper.setSetting(
+                              "requireBothPasswordAndPIN", "false");
+                        }
 
                         setState(() {
                           usePassword = value;
@@ -145,21 +209,22 @@ class _SettingsState extends State<Settings> {
                     title: const Text("Passwords"),
                     tiles: <SettingsTile>[
                       SettingsTile.navigation(
-                        title: const Text("Change Password"),
+                        title: Text(
+                            "${password == null ? "Set" : "Change"} Password"),
                         leading: const Icon(Icons.abc),
                         onPressed: ((context) => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const App(),
+                              builder: (context) => SetPassword(),
                             ))),
                       ),
                       SettingsTile.navigation(
-                        title: const Text("Change PIN"),
+                        title: Text("${PIN == null ? "Set" : "Change"} PIN"),
                         leading: const Icon(Icons.pin),
                         onPressed: ((context) => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const App(),
+                              builder: (context) => const SetPIN(),
                             ))),
                       )
                     ])

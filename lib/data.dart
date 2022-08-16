@@ -1,4 +1,6 @@
 // ignore_for_file: constant_identifier_names
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class DataHelper {
@@ -7,20 +9,14 @@ class DataHelper {
 
   Future<Map<String, dynamic>> getSettings() async {
     Map<String, String> allValues = await storage.readAll();
-    // print(await storage.readAll());
-    // Map<String, String> allValues = {
-    //   "useBiometrics": "false",
-    //   "usePIN": "false",
-    //   "usePassword": "false",
-    //   "preferredMethod": "false",
-    //   "order": "[\"Biometric\"]"
-    // };
+    // storage.delete(key: "PIN");
+    // storage.delete(key: "password");
 
     Map<String, dynamic> settings = {
       "useBiometrics": allValues["useBiometrics"] == "true",
       "usePIN": allValues["usePIN"] == "true",
       "usePassword": allValues["usePassword"] == "true",
-      "defaultIsPIN": allValues["defaultIsPIN"] == "true",
+      "defaultIsPIN": allValues["defaultIsPIN"] != "false",
       "requireBothPasswordAndPIN":
           allValues["requireBothPasswordAndPIN"] == "true",
     };
@@ -32,22 +28,31 @@ class DataHelper {
     storage.write(key: key, value: value);
   }
 
-  getUserDefinedPasswords() async {
-    Map<String, String> passwords = {"password": "asd", "PIN": "1212"};
+  Future<Map<String, String>> getUserDefinedPasswords() async {
+    String? password = await storage.read(key: "password");
+    // ignore: non_constant_identifier_names
+    String? PIN = await storage.read(key: "PIN");
+
+    Map<String, String> passwords = {
+      if (password != null) "password": password,
+      if (PIN != null) "PIN": PIN,
+    };
 
     return passwords;
   }
 
-  setUserDefinedPassword() async {}
+  Future<List<Map<String, String>>> getUserData() async {
+    String data = await storage.read(key: "userData") ?? "[]";
 
-  getUserData() {}
+    return List.from(json.decode(data))
+        .map((e) => ({
+              "name": e["name"] as String,
+              "value": e["value"] as String,
+            }))
+        .toList();
+  }
 
-  setUserData() {}
+  setUserData(List<Map<String, String>> data) {
+    storage.write(key: "userData", value: json.encode(data));
+  }
 }
-
-Set securityElements = {
-  "Biometric",
-  "PIN",
-  "Password",
-  "AllUserDefined",
-};

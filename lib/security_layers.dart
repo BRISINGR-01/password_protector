@@ -62,15 +62,13 @@ class SecurityLayers extends StatelessWidget {
           Map<String, dynamic> data = snapshot.data as Map<String, dynamic>;
           Map<String, dynamic> settings = data["settings"];
           Map<String, String> passwords = data["passwords"];
-          print(settings);
-          print(passwords);
 
           switch (layerIndex) {
             case 0:
               if (data["canAuthenticate"] && settings["useBiometrics"]) {
                 return BuiltInAuth(layerIndex: layerIndex);
               } else if (passwords.isEmpty) {
-                return const Settings();
+                return const App();
               } else if (!settings["usePIN"] && !settings["usePassword"]) {
                 return const App();
               } else {
@@ -82,6 +80,7 @@ class SecurityLayers extends StatelessWidget {
                   return UserPIN(
                     layerIndex: layerIndex,
                     enableSwitching: false,
+                    passwords: passwords,
                   );
                 }
 
@@ -92,6 +91,7 @@ class SecurityLayers extends StatelessWidget {
                     child: UserPassword(
                       layerIndex: layerIndex,
                       enableSwitching: false,
+                      passwords: passwords,
                     ),
                   );
                 }
@@ -100,14 +100,17 @@ class SecurityLayers extends StatelessWidget {
               if (settings["defaultIsPIN"]) {
                 if (settings["usePIN"] && passwords.containsKey("PIN")) {
                   return UserPIN(
-                      layerIndex: layerIndex,
-                      enableSwitching: passwords.containsKey("password") &&
-                          settings["usePassword"]);
+                    layerIndex: layerIndex,
+                    enableSwitching: passwords.containsKey("password") &&
+                        settings["usePassword"],
+                    passwords: passwords,
+                  );
                 } else if (settings["usePassword"] &&
                     passwords.containsKey("password")) {
                   return UserPassword(
                     layerIndex: layerIndex,
                     enableSwitching: false,
+                    passwords: passwords,
                   );
                 }
               } else {
@@ -117,11 +120,13 @@ class SecurityLayers extends StatelessWidget {
                     layerIndex: layerIndex,
                     enableSwitching:
                         passwords.containsKey("PIN") && settings["usePIN"],
+                    passwords: passwords,
                   );
                 } else if (settings["usePIN"] && passwords.containsKey("PIN")) {
                   return UserPIN(
                     layerIndex: layerIndex,
                     enableSwitching: false,
+                    passwords: passwords,
                   );
                 }
               }
@@ -134,6 +139,7 @@ class SecurityLayers extends StatelessWidget {
                   return UserPassword(
                     layerIndex: layerIndex,
                     enableSwitching: false,
+                    passwords: passwords,
                   );
                 }
               }
