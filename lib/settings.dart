@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:password_protector/data.dart';
 import 'package:password_protector/password.dart';
 import 'package:password_protector/pin.dart';
+import 'package:password_protector/security_layers.dart';
 import 'package:settings_ui/settings_ui.dart';
 
 class Settings extends StatefulWidget {
@@ -25,25 +28,43 @@ class _SettingsState extends State<Settings> {
   String? PIN;
   bool hasPIN = false;
   bool hasPassword = false;
+  Set<String> messages = {};
+
+  displayMessage(String type, BuildContext context) {
+    // this prevents stacking messages when the user spams a button
+    if (messages.contains(type)) return;
+    messages.add(type);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        duration: const Duration(milliseconds: 1200),
+        content: Text('Add a $type first!')));
+
+    Future.delayed(const Duration(milliseconds: 1200))
+        .then((_) => messages.remove(type));
+  }
 
   @override
   void initState() {
     super.initState();
-    dataHelper.getSettings().then((value) => setState(() {
-          hasLoaded = true;
-          usePIN = value["usePIN"];
-          defaultIsPIN = value["defaultIsPIN"];
-          requireBothPasswordAndPIN = value["requireBothPasswordAndPIN"];
-          usePassword = value["usePassword"];
-          useBiometrics = value["useBiometrics"];
-        }));
-    dataHelper.getUserDefinedPasswords().then((value) => setState(() {
-          hasLoaded = true;
-          password = value["password"];
-          PIN = value["PIN"];
-          hasPIN = PIN?.isNotEmpty ?? false;
-          hasPassword = password?.isNotEmpty ?? false;
-        }));
+    Future.wait(
+            [dataHelper.getSettings(), dataHelper.getUserDefinedPasswords()])
+        .then((data) {
+      Map<String, dynamic> settings = data[0];
+      Map<String, dynamic> passwords = data[1];
+
+      setState(() {
+        hasLoaded = true;
+        usePIN = settings["usePIN"];
+        defaultIsPIN = settings["defaultIsPIN"];
+        requireBothPasswordAndPIN = settings["requireBothPasswordAndPIN"];
+        usePassword = settings["usePassword"];
+        useBiometrics = settings["useBiometrics"];
+        password = passwords["password"];
+        PIN = passwords["PIN"];
+        hasPIN = PIN?.isNotEmpty ?? false;
+        hasPassword = password?.isNotEmpty ?? false;
+      });
+    });
   }
 
   @override
@@ -55,21 +76,13 @@ class _SettingsState extends State<Settings> {
         actions: [
           IconButton(
               tooltip: "Lock",
-              onPressed: () =>
-                  Navigator.popUntil(context, (route) => route.isFirst),
+              onPressed: () => Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => SecurityLayers(layerIndex: 0)),
+                  (route) => false),
               icon: const Icon(Icons.lock_outline))
         ],
-      ),
-      bottomSheet: Container(
-        color: Theme.of(context).colorScheme.primary,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            "You may need to restart the app in order for the changes to take place",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-          ),
-        ),
       ),
       body: !hasLoaded
           ? const Center(
@@ -84,15 +97,13 @@ class _SettingsState extends State<Settings> {
                       onToggle: (value) {
                         if (value) {
                           if (!hasPassword || !hasPIN) {
-                            return ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    duration:
-                                        const Duration(milliseconds: 1200),
-                                    content: Text(!hasPassword && !hasPIN
-                                        ? 'Add a PIN and a password first!'
-                                        : !hasPassword
-                                            ? 'Add a password first!'
-                                            : 'Add a PIN first!')));
+                            return displayMessage(
+                                !hasPassword && !hasPIN
+                                    ? 'PIN and a password'
+                                    : !hasPassword
+                                        ? 'password'
+                                        : 'PIN',
+                                context);
                           }
                           setState(() {
                             usePIN = true;
@@ -114,17 +125,6 @@ class _SettingsState extends State<Settings> {
                     ),
                     SettingsTile.switchTile(
                       onToggle: (value) {
-                        if (value) {
-                          if (!hasPIN) {
-                            return ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    duration: Duration(milliseconds: 1200),
-                                    content: Text('Add a PIN first!')));
-                          }
-                          usePIN = true;
-                          dataHelper.setSetting("usePIN", "true");
-                        } else {}
-
                         setState(() {
                           defaultIsPIN = value;
                         });
@@ -138,19 +138,14 @@ class _SettingsState extends State<Settings> {
                       onToggle: (value) {
                         if (value) {
                           if (!hasPIN) {
-                            return ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    duration: Duration(milliseconds: 1200),
-                                    content: Text('Add a PIN first!')));
+                            return displayMessage("PIN", context);
                           }
                         } else {
                           setState(() {
                             requireBothPasswordAndPIN = false;
-                            defaultIsPIN = false;
                           });
                           dataHelper.setSetting(
                               "requireBothPasswordAndPIN", "false");
-                          dataHelper.setSetting("defaultIsPIN", "false");
                         }
 
                         setState(() {
@@ -166,10 +161,7 @@ class _SettingsState extends State<Settings> {
                       onToggle: (value) {
                         if (value) {
                           if (!hasPassword) {
-                            return ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    duration: Duration(milliseconds: 1200),
-                                    content: Text('Add a password first!')));
+                            return displayMessage("password", context);
                           }
                         } else {
                           setState(() {
@@ -189,9 +181,39 @@ class _SettingsState extends State<Settings> {
                       title: const Text('Use Password'),
                     ),
                     SettingsTile.switchTile(
-                      onToggle: (value) {
+                      onToggle: (value) async {
                         if (value) {
-                        } else {}
+                          LocalAuthentication auth = LocalAuthentication();
+                          bool canAuthenticate = false;
+                          bool isSupported = false;
+
+                          try {
+                            canAuthenticate = await auth.canCheckBiometrics;
+                            isSupported = await auth.isDeviceSupported();
+                          } catch (_) {}
+
+                          try {
+                            auth.authenticate(
+                              localizedReason: 'Use biometric authentication',
+                            );
+                          } on PlatformException catch (_) {
+                            canAuthenticate = false;
+                          } catch (e) {
+                            canAuthenticate = false;
+                          }
+
+                          try {
+                            auth.stopAuthentication();
+                          } catch (_) {}
+
+                          if (!isSupported || !canAuthenticate) {
+                            if (mounted) {
+                              return displayMessage(
+                                  "Biometrics (PIN/Password/Fingerprint/Face) to your device",
+                                  context);
+                            }
+                          }
+                        }
 
                         setState(() {
                           useBiometrics = value;
@@ -215,7 +237,7 @@ class _SettingsState extends State<Settings> {
                         onPressed: ((context) => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => SetPassword(),
+                              builder: (context) => const SetPassword(),
                             ))),
                       ),
                       SettingsTile.navigation(

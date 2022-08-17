@@ -8,7 +8,6 @@ import 'package:password_protector/data.dart';
 import 'package:password_protector/device_built_in_auth.dart';
 import 'package:password_protector/password.dart';
 import 'package:password_protector/pin.dart';
-import 'package:password_protector/settings.dart';
 
 class SecurityLayers extends StatelessWidget {
   final int layerIndex;
@@ -22,8 +21,7 @@ class SecurityLayers extends StatelessWidget {
 
     try {
       canCheckBiometrics = await auth.canCheckBiometrics;
-    } on PlatformException catch (e) {
-      print(e);
+    } on PlatformException catch (_) {
       canCheckBiometrics = false;
     } catch (e) {
       canCheckBiometrics = false;

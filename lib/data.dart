@@ -9,8 +9,6 @@ class DataHelper {
 
   Future<Map<String, dynamic>> getSettings() async {
     Map<String, String> allValues = await storage.readAll();
-    // storage.delete(key: "PIN");
-    // storage.delete(key: "password");
 
     Map<String, dynamic> settings = {
       "useBiometrics": allValues["useBiometrics"] == "true",

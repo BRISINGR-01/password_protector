@@ -4,6 +4,7 @@ import 'package:password_protector/data.dart';
 import 'package:password_protector/password.dart';
 import 'package:password_protector/safe_exit.dart';
 import 'package:password_protector/security_layers.dart';
+import 'package:password_protector/settings.dart';
 
 class UserPIN extends StatefulWidget {
   final int layerIndex;
@@ -79,7 +80,6 @@ class _UserPINState extends State<UserPIN> {
                   emptyIndicatorColor:
                       pinInputColor ?? Theme.of(context).colorScheme.primary,
                   filledIndicatorColor: Colors.blue.shade300,
-                  // pinInputColor ?? Theme.of(context).colorScheme.tertiary,
                   onPressColorAnimation: Colors.white,
                   buttonColor: Theme.of(context).colorScheme.primary,
                   numbersStyle: TextStyle(
@@ -169,8 +169,17 @@ class _SetPINState extends State<SetPIN> {
                     } else if (state == "repeating") {
                       if (currentPIN == firstEnteredPIN) {
                         dataHelper.setSetting("PIN", pin);
+                        dataHelper.setSetting("usePIN", "true");
+                        dataHelper.setSetting("defaultIsPIN", "true");
 
-                        widgetState!.close();
+                        Navigator.pop(context); // remove the `Set PIN` route
+                        Navigator.pop(context); // remove the `Settings` route
+                        Navigator.push(
+                            // add the `Settings` route so that the values are refreshed
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const Settings(),
+                            ));
                       } else {
                         setState(() {
                           state = "wrong";

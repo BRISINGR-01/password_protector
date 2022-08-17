@@ -145,74 +145,78 @@ class _SetPasswordState extends State<SetPassword> {
                 "${state == "first password" ? "Set" : state == "repeating" ? "Repeat" : "Wrong"} password"),
           ),
           body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: PasswordField(
-                  passwordConstraint: r'.*',
-                  hintText: state == "first password"
-                      ? "Type in your new password"
-                      : state == "repeating"
-                          ? "Repeat your password"
-                          : "Wrong! Try Again",
-                  autoFocus: true,
-                  color: Theme.of(context).colorScheme.primary,
-                  onSubmit: ((password) {
-                    if (password.isEmpty) return;
+              child: PasswordField(
+                passwordConstraint: r'.*',
+                hintText: state == "first password"
+                    ? "Type in your new password"
+                    : state == "repeating"
+                        ? "Repeat your password"
+                        : "Wrong! Try Again",
+                autoFocus: true,
+                color: Theme.of(context).colorScheme.primary,
+                onSubmit: ((password) {
+                  if (password.isEmpty) return;
 
-                    controller.clear();
-                    if (state == "first password") {
+                  controller.clear();
+                  if (state == "first password") {
+                    setState(() {
+                      state = "repeating";
+                      currentPassword = password;
+                    });
+                  } else if (state == "repeating") {
+                    if (currentPassword == password) {
+                      dataHelper.setSetting("password", password);
+                      dataHelper.setSetting("usePassword", "true");
+                      dataHelper.setSetting("defaultIsPIN", "false");
+
+                      Navigator.pop(context); // remove the `Set password` route
+                      Navigator.pop(context); // remove the `Settings` route
+                      Navigator.push(
+                          // add the `Settings` route so that the values are refreshed
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const Settings(),
+                          ));
+                    } else {
                       setState(() {
-                        state = "repeating";
-                        currentPassword = password;
+                        state = "wrong";
+                        currentPassword = "";
                       });
-                    } else if (state == "repeating") {
-                      if (currentPassword == password) {
-                        dataHelper.setSetting("password", password);
-
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const Settings(),
-                            ));
-                      } else {
-                        setState(() {
-                          state = "wrong";
-                          currentPassword = "";
-                        });
-                        Future.delayed(const Duration(milliseconds: 600))
-                            .then((_) => setState(() {
-                                  state = "first password";
-                                }));
-                      }
+                      Future.delayed(const Duration(milliseconds: 600))
+                          .then((_) => setState(() {
+                                state = "first password";
+                              }));
                     }
-                  }),
-                  controller: controller,
-                  inputDecoration: PasswordDecoration(),
-                  border: PasswordBorder(
-                    border: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+                  }
+                }),
+                controller: controller,
+                inputDecoration: PasswordDecoration(),
+                border: PasswordBorder(
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        width: 2,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      width: 2,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          width: 2, color: Theme.of(context).colorScheme.error),
-                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                        width: 2, color: Theme.of(context).colorScheme.error),
                   ),
                 ),
-              )),
+              ),
+            ),
+          ),
         ),
       ),
     );

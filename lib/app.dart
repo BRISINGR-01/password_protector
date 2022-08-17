@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:password_protector/data.dart';
 import 'package:password_protector/safe_exit.dart';
+import 'package:password_protector/security_layers.dart';
 import 'package:password_protector/settings.dart';
 
 import 'package:flutter/services.dart';
@@ -86,7 +87,7 @@ class AppState extends State<App> {
             IconButton(
                 tooltip: "Edit",
                 onPressed: () => setState(() {
-                      choosingToEdit = !choosingToEdit;
+                      choosingToEdit = elements.isNotEmpty && !choosingToEdit;
                       editingIndex = -1;
                     }),
                 icon: Icon(
@@ -105,8 +106,11 @@ class AppState extends State<App> {
                 icon: const Icon(Icons.settings)),
             IconButton(
                 tooltip: "Lock",
-                onPressed: () =>
-                    Navigator.popUntil(context, (route) => route.isFirst),
+                onPressed: () => Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => SecurityLayers(layerIndex: 0)),
+                    (route) => false),
                 icon: const Icon(Icons.lock_outline))
           ],
         ),
@@ -117,13 +121,15 @@ class AppState extends State<App> {
                 backgroundColor: Theme.of(context).colorScheme.tertiary,
                 child: const Icon(Icons.add),
               ),
-        body: Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: ListView.builder(
-              itemCount: elements.length,
-              itemBuilder: ((context, index) {
-                if (editingIndex == index) {
-                  return ListTile(
+        body: ListView.builder(
+            itemCount: elements.length,
+            itemBuilder: ((context, index) {
+              if (editingIndex == index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom: index == elements.length - 1 ? 100 : 0,
+                      top: index == 0 ? 20 : 0),
+                  child: ListTile(
                     title: ListTile(
                       leading: const Text("name:"),
                       title: TextFormField(
@@ -148,7 +154,7 @@ class AppState extends State<App> {
                         initialValue: elements[index]["value"],
                         textInputAction: TextInputAction.done,
                         onChanged: (val) => setState(() {
-                          currentEdited["value"] = val;
+                          currentEdited["value"] = val.trim();
                         }),
                       ),
                       trailing: IconButton(
@@ -162,38 +168,28 @@ class AppState extends State<App> {
                         }),
                       ),
                     ),
-                  );
-                } else {
-                  return GestureDetector(
-                    onTap: choosingToEdit ? () => startEditing(index) : null,
-                    onLongPressDown: (_) => setState(() {
-                      showTextIndex = index;
-                    }),
-                    onLongPressEnd: (_) => setState(() {
-                      showTextIndex = -1;
-                    }),
-                    onLongPressCancel: () => setState(() {
-                      showTextIndex = -1;
-                    }),
+                  ),
+                );
+              } else {
+                return GestureDetector(
+                  onTap: choosingToEdit ? () => startEditing(index) : null,
+                  onLongPressDown: (_) => setState(() {
+                    showTextIndex = index;
+                  }),
+                  onLongPressEnd: (_) => setState(() {
+                    showTextIndex = -1;
+                  }),
+                  onLongPressCancel: () => setState(() {
+                    showTextIndex = -1;
+                  }),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                        bottom: index == elements.length - 1 ? 100 : 0,
+                        top: index == 0 ? 20 : 0),
                     child: ListTile(
                       title: Padding(
                         padding: const EdgeInsets.only(left: 16),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              showTextIndex == index
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              size: 20,
-                              color: showTextIndex == index
-                                  ? Theme.of(context).colorScheme.tertiary
-                                  : null,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(elements[index]["name"] ?? ""),
-                          ],
-                        ),
+                        child: Text("▸ ${elements[index]["name"] ?? ""}"),
                       ),
                       subtitle: Padding(
                         padding: const EdgeInsets.only(left: 16),
@@ -239,10 +235,10 @@ class AppState extends State<App> {
                               },
                             ),
                     ),
-                  );
-                }
-              })),
-        ),
+                  ),
+                );
+              }
+            })),
       )),
     );
   }
