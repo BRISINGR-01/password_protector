@@ -28,6 +28,8 @@ class _BuiltInAuthState extends State<BuiltInAuth> {
       if (e.message == "Required security features not enabled") {
         dataHelper.setSetting("useBiometrics", "false");
         authenticated = true;
+      } else {
+        authenticated = false;
       }
     } catch (e) {
       authenticated = false;

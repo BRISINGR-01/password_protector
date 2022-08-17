@@ -196,15 +196,12 @@ class _SettingsState extends State<Settings> {
                             auth.authenticate(
                               localizedReason: 'Use biometric authentication',
                             );
+                            auth.stopAuthentication();
                           } on PlatformException catch (_) {
                             canAuthenticate = false;
                           } catch (e) {
                             canAuthenticate = false;
                           }
-
-                          try {
-                            auth.stopAuthentication();
-                          } catch (_) {}
 
                           if (!isSupported || !canAuthenticate) {
                             if (mounted) {
