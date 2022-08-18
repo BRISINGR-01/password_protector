@@ -1,4 +1,4 @@
-package com.example.password_protector
+package com.password_protector
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

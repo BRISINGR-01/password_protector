@@ -1,35 +1,33 @@
 // ignore_for_file: constant_identifier_names
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_keychain/flutter_keychain.dart';
 
 class DataHelper {
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
   DataHelper();
 
   Future<Map<String, dynamic>> getSettings() async {
-    Map<String, String> allValues = await storage.readAll();
-
     Map<String, dynamic> settings = {
-      "useBiometrics": allValues["useBiometrics"] == "true",
-      "usePIN": allValues["usePIN"] == "true",
-      "usePassword": allValues["usePassword"] == "true",
-      "defaultIsPIN": allValues["defaultIsPIN"] != "false",
+      "useBiometrics":
+          await FlutterKeychain.get(key: "useBiometrics") == "true",
+      "usePIN": await FlutterKeychain.get(key: "usePIN") == "true",
+      "usePassword": await FlutterKeychain.get(key: "usePassword") == "true",
+      "defaultIsPIN": await FlutterKeychain.get(key: "defaultIsPIN") != "false",
       "requireBothPasswordAndPIN":
-          allValues["requireBothPasswordAndPIN"] == "true",
+          await FlutterKeychain.get(key: "requireBothPasswordAndPIN") == "true",
     };
 
     return settings;
   }
 
   setSetting(String key, String value) {
-    storage.write(key: key, value: value);
+    FlutterKeychain.put(key: key, value: value);
   }
 
   Future<Map<String, String>> getUserDefinedPasswords() async {
-    String? password = await storage.read(key: "password");
+    String? password = await FlutterKeychain.get(key: "password");
     // ignore: non_constant_identifier_names
-    String? PIN = await storage.read(key: "PIN");
+    String? PIN = await FlutterKeychain.get(key: "PIN");
 
     Map<String, String> passwords = {
       if (password != null) "password": password,
@@ -40,7 +38,7 @@ class DataHelper {
   }
 
   Future<List<Map<String, String>>> getUserData() async {
-    String data = await storage.read(key: "userData") ?? "[]";
+    String data = await FlutterKeychain.get(key: "userData") ?? "[]";
 
     return List.from(json.decode(data))
         .map((e) => ({
@@ -51,6 +49,6 @@ class DataHelper {
   }
 
   setUserData(List<Map<String, String>> data) {
-    storage.write(key: "userData", value: json.encode(data));
+    FlutterKeychain.put(key: "userData", value: json.encode(data));
   }
 }
