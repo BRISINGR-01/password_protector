@@ -4,8 +4,10 @@ A secure way to store passwords on your Android, IOS, or Windows device. It uses
 
 # Installation
 
-This is a standart flutter project.
+To open as a developer
 
 1) Clone the project
 2) run `flutter pub get` in the source folder
 3) run `flutter build`
+
+If you are just a user download from https://play.google.com/store/apps/details?id=com.password_protector
